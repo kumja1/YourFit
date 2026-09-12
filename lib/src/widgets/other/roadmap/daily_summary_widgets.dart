@@ -1,5 +1,5 @@
 // lib/src/screens/tabs/roadmap/widgets/daily_summary_widgets.dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:yourfit/src/models/exercise/index.dart';
 
 class AiGenerationBanner extends StatelessWidget {

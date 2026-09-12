@@ -1,7 +1,7 @@
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart' hide WidgetPaddingX;
+import 'package:yourfit/src/utils/index.dart';
 
 class AuthFormTextField extends StatelessWidget {
   final Function(String value)? onChanged;
@@ -34,12 +34,15 @@ class AuthFormTextField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) =>
-      GetBuilder<_AuthFormTextFieldController>(
-        global: false,
-        init: _AuthFormTextFieldController(),
-        builder: (controller) => TextFormField(
-          obscureText: !controller.passwordVisible,
+  Widget build(BuildContext context) {
+    final tag = '${key ?? identityHashCode(this)}';
+    final controller = Get.put(
+      _AuthFormTextFieldController(),
+      tag: tag,
+    );
+    return Obx(
+      () => TextFormField(
+          obscureText: !controller.passwordVisible.value,
           onChanged: onChanged,
           validator: validator,
           keyboardType: keyboardType,
@@ -52,7 +55,7 @@ class AuthFormTextField extends StatelessWidget {
                         padding: EdgeInsets.zero,
                         onPressed: () => controller.togglePasswordVisibility(),
                         icon: Icon(
-                          controller.passwordVisible
+                          controller.passwordVisible.value
                               ? Icons.visibility_rounded
                               : Icons.visibility_off_rounded,
                           color: passwordVisibilityColor,
@@ -70,18 +73,18 @@ class AuthFormTextField extends StatelessWidget {
                   : floatingLabelStyle!,
             ),
           ),
-        ),
-      ).constrains(
+      ),
+    ).constrains(
         maxWidth: width ?? double.infinity,
         maxHeight: height ?? double.infinity,
       );
+  }
 }
 
-class _AuthFormTextFieldController extends GetxController {
-  bool passwordVisible = true;
+class _AuthFormTextFieldController {
+  final Rx<bool> passwordVisible = false.obs;
 
   void togglePasswordVisibility() {
-    passwordVisible = !passwordVisible;
-    update();
+    passwordVisible.value = !passwordVisible.value;
   }
 }

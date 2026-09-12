@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'package:animated_snack_bar/animated_snack_bar.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:get/get.dart';
 import 'package:icon_decoration/icon_decoration.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:open_route_service/open_route_service.dart';
@@ -30,14 +29,15 @@ class NavigationMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     try {
-      Get.log("Controller initialized with start: ${route.start}");
-      return GetBuilder<_NavigationMapController>(
-        init: _NavigationMapController(
+     final controller = Get.put(
+        _NavigationMapController(
           route: route,
           onDestinationReached: onDestinationReached,
         ),
-        builder: (controller) =>
-            FlutterMap(
+        tag: '${route.start.latitude}:${route.start.longitude}',
+      );
+logger.info("Controller initialized with start: ${route.start}");
+      return FlutterMap(
               mapController: controller.mapController,
               options: MapOptions(
                 cameraConstraint: CameraConstraint.containCenter(
@@ -79,7 +79,7 @@ class NavigationMap extends StatelessWidget {
                   alignDirectionOnUpdate: AlignOnUpdate.always,
                   alignPositionOnUpdate: AlignOnUpdate.always,
                   errorHandler: (e) {
-                    e.printError();
+                    logger.severe("Error in CurrentLocationLayer: $e");
                     return e;
                   },
                   positionStream: controller.stream?.map(
@@ -92,17 +92,16 @@ class NavigationMap extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
       );
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in NavigationMap: $e", e);
       return const SizedBox.shrink();
     }
   }
 }
 
-class _NavigationMapController extends GetxController {
-  final DeviceService deviceService = Get.find();
+class _NavigationMapController {
+  final DeviceService deviceService = Get.find<DeviceService>();
   final ({
   Position start,
   Map<String, dynamic> segmentJson,
@@ -124,18 +123,18 @@ class _NavigationMapController extends GetxController {
       .map((c) => LatLng(c.latitude, c.longitude))
       .toList();
 
-  @override
-  void onReady() {
+  void init() {
     try {
-      Get.log("Starting navigation");
+      logger.info("Starting navigation");
       final steps = route.segment.steps;
       final stepsJson = (route.segmentJson["steps"] as List<dynamic>)
           .map((step) => Map<String, dynamic>.from(step as Map))
           .toList();
 
-      Get.log("Route has ${steps.length} steps");
+      logger.info("Route has ${steps.length} steps");
       stream = deviceService.getDevicePositionStream()?.asBroadcastStream();
       if (stream == null) {
+        logger.severe("Failed to get device position stream");
         return;
       }
 
@@ -155,14 +154,14 @@ class _NavigationMapController extends GetxController {
           maneuverCoords.longitude,
         );
 
-        Get.log("Current position: $position");
-        Get.log("Next maneuver at: $maneuverCoords");
-        Get.log("Distance from next maneuver: $distance");
+        logger.info("Current position: $position");
+        logger.info("Next maneuver at: $maneuverCoords");
+        logger.info("Distance from next maneuver: $distance");
 
         try {
           bool isNear = distance <= 5;
           if (!isNear) {
-            if (currentStep.instruction.isBlank == true) {
+            if (currentStep.instruction.isEmpty) {
               return;
             }
 
@@ -174,26 +173,26 @@ class _NavigationMapController extends GetxController {
           }
 
           if (isNear && currentIndex == steps.length - 1) {
-            Get.log("Reached final destination");
+            logger.info("Reached final destination");
             onRouteEnd();
             return;
           }
 
           currentStep = steps[++currentIndex];
-          Get.log("Moving to step $currentIndex");
+          logger.info("Moving to step $currentIndex");
         } on Error catch (e) {
-          e.printError();
+          logger.severe("Error in NavigationMap", e);
           showSnackbar(e.toString(), AnimatedSnackBarType.error);
         }
       });
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in NavigationMap", e);
       showSnackbar(e.toString(), AnimatedSnackBarType.error);
     }
   }
 
   void onRouteEnd() {
-    Get.log("Navigation completed");
+    logger.info("Navigation completed");
     subscription.cancel();
     onDestinationReached();
   }

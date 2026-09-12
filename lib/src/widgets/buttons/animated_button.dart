@@ -1,5 +1,5 @@
 import 'package:custom_button_builder/custom_button_builder.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class AnimatedButton extends StatelessWidget {
   // this can be used to give a title to the widget

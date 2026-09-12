@@ -1,22 +1,20 @@
 import 'package:animated_snack_bar/animated_snack_bar.dart';
-import 'package:auto_route/annotations.dart';
-import 'package:flutter/material.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:get/get.dart';
 import 'package:yourfit/src/models/auth/auth_response.dart';
 import 'package:yourfit/src/routing/routes.dart';
 import 'package:yourfit/src/utils/index.dart';
 import 'package:yourfit/src/widgets/index.dart';
+import 'package:zenify/zenify.dart';
 
 @RoutePage()
-class PasswordResetScreen extends StatelessWidget {
+class PasswordResetScreen extends ZenView<PasswordResetScreenController> {
   const PasswordResetScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(_PasswordResetScreenController());
-
-    bool resetPassword = bool.parse(Get.parameters["resetPassword"] ?? "false");
+  Widget build(BuildContext context, PasswordResetScreenController controller) {
+    bool resetPassword = context.router.current.argsAs<bool>();
     return Scaffold(
       body: Center(
         child: AuthForm(
@@ -56,24 +54,24 @@ class PasswordResetScreen extends StatelessWidget {
   }
 }
 
-class _PasswordResetScreenController extends AuthFormController {
-  Future<void> resetPassword() async {
+class PasswordResetScreenController extends AuthFormController {
+  Future<AuthResponse> resetPassword() async {
     if (!validateForm()) {
-      return;
+      return AuthResponse(code: AuthCode.error, message: "Invalid form data");
     }
 
     AuthResponse response = await authService.resetPassword(password);
     if (response.code == AuthCode.error) {
       showSnackbar(response.message!, AnimatedSnackBarType.error);
-      return;
+      return response;
     }
 
-    showSnackbar("Password Reset", AnimatedSnackBarType.success);
+    return response;
   }
 
-  Future<void> forgetPassword() async {
+  Future<AuthResponse> forgetPassword() async {
     if (!validateForm()) {
-      return;
+      return AuthResponse(code: AuthCode.error, message: "Invalid form data");
     }
 
     AuthResponse response = await authService.sendPasswordReset(
@@ -82,10 +80,10 @@ class _PasswordResetScreenController extends AuthFormController {
     );
 
     if (response.code == AuthCode.error) {
-      showSnackbar(response.message!, AnimatedSnackBarType.error);
-      return;
+      
+      return response;
     }
 
-    showSnackbar("Check your email", AnimatedSnackBarType.success);
+    return response;
   }
 }

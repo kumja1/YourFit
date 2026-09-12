@@ -1,5 +1,5 @@
 import 'package:dart_mappable/dart_mappable.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:yourfit/src/models/exercise/exercise_data.dart';
 
 part 'workout_data.mapper.dart';

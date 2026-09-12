@@ -1,6 +1,6 @@
 // lib/src/screens/tabs/exercise/widgets/qa_mini.dart
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:rxget/rxget.dart';
 import 'package:yourfit/src/services/index.dart';
 import 'package:yourfit/src/utils/objects/constants/exercise/response_schema.dart';
 
@@ -62,7 +62,7 @@ class _QaMiniSheet extends StatefulWidget {
 
 class _QaMiniSheetState extends State<_QaMiniSheet> {
   final _controller = TextEditingController();
-  final _service = Get.put(ExerciseService());
+  final _service = Get.find<ExerciseService>();
   final currentUser = Get.find<AuthService>().currentUser;
   final _items = <_QaItem>[];
   bool _sending = false;

@@ -1,12 +1,13 @@
-import 'package:get/get.dart';
-import 'package:get/get_utils/src/extensions/export.dart';
+import 'package:logging/logging.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 import 'package:yourfit/src/models/exercise/exercise_data.dart';
 import 'package:yourfit/src/models/exercise/monthly_workout_data.dart';
 import 'package:yourfit/src/models/user_data.dart';
+import 'package:yourfit/src/utils/functions/init_services.dart';
 
 class UserService {
   final _userTable = Supabase.instance.client.from("user_data");
+  final Logger logger = Get.find<Logger>();
 
   Future<UserData?> createUser(
     String id,
@@ -34,7 +35,7 @@ class UserService {
 
       return await createUserFromData(user);
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in createUser", e);
       return null;
     }
   }
@@ -78,7 +79,7 @@ class UserService {
     try {
       await _userTable.insert(user.toMap());
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in createUserFromData", e);
     }
     return user;
   }
@@ -88,7 +89,7 @@ class UserService {
       await _userTable.update(user.toMap()).eq("id", user.id);
       return true;
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in updateUser", e);
       return false;
     }
   }
@@ -96,10 +97,10 @@ class UserService {
   Future<UserData?> getUser(String id) async {
     try {
       final response = await _userTable.select().eq("id", id);
-      response.printInfo();
+      logger.info("Fetched user data: $response");
       return UserData.fromMap(response.first);
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in getUser", e);
       return null;
     }
   }

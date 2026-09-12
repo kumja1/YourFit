@@ -1,9 +1,9 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide WidgetPaddingX;
+import 'package:material_ui/material_ui.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
+import 'package:rxget/rxget.dart';
 import 'package:yourfit/src/models/exercise/exercise_data.dart';
 import 'package:yourfit/src/routing/index.dart';
 import 'package:yourfit/src/widgets/buttons/animated_button.dart';
@@ -14,9 +14,7 @@ class BasicExerciseScreen extends StatelessWidget {
   final VoidCallback onSetComplete;
   final VoidCallback onExerciseComplete;
 
-  final _tag = UniqueKey().toString();
-
-  BasicExerciseScreen({
+  const BasicExerciseScreen({
     super.key,
     required this.exercise,
     required this.onSetComplete,
@@ -25,16 +23,17 @@ class BasicExerciseScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: GetBuilder<_BasicExerciseScreenController>(
-        init: _BasicExerciseScreenController(
-          exercise,
-          onExerciseComplete,
-          onSetComplete,
-        ),
-        id: "started",
-        tag: _tag,
-        builder: (controller) => !controller.started
+    final controller = _BasicExerciseScreenController(
+      exercise,
+      onExerciseComplete,
+      onSetComplete,
+    );
+
+    final started = controller.started;
+    final setsDone = controller.exercise.state.setsDone;
+
+    return Obx(() => Scaffold(
+      body:  !started.value
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -59,20 +58,17 @@ class BasicExerciseScreen extends StatelessWidget {
               )
             : Column(
                 children: [
-                  GetBuilder<_BasicExerciseScreenController>(
-                    tag: _tag,
-                    builder: (controller) => StepProgressIndicator(
+                 StepProgressIndicator(
                       size: 10,
                       totalSteps: controller.exercise.sets,
                       padding: 0,
-                      currentStep: controller.exercise.state.setsDone,
+                      currentStep: setsDone.value,
                       roundedEdges: const Radius.circular(10),
                       crossAxisAlignment: CrossAxisAlignment.start,
                       unselectedColor: Colors.grey[200]!,
                       selectedColor: Colors.blue,
                       progressDirection: TextDirection.ltr,
                     ).paddingOnly(left: 30, right: 30, top: 20),
-                  ),
                   Align(
                     alignment: Alignment.center,
                     child: CircularCountDownTimer(
@@ -100,18 +96,17 @@ class BasicExerciseScreen extends StatelessWidget {
                   ).flexible(),
                 ],
               ),
-      ),
-    );
+    ));
   }
 }
 
-class _BasicExerciseScreenController extends GetxController {
+class _BasicExerciseScreenController {
   final ExerciseData exercise;
   final VoidCallback onSetComplete;
   final VoidCallback onExerciseComplete;
   final CountDownController countdownController = CountDownController();
-  final AppRouter router = Get.find();
-  bool started = false;
+  final AppRouter router = Get.find<AppRouter>();
+  final Rx<bool> started = false.obs;
 
   _BasicExerciseScreenController(
     this.exercise,
@@ -120,24 +115,22 @@ class _BasicExerciseScreenController extends GetxController {
   );
 
   void toggleStarted() {
-    started = !started;
-    update(["started"]);
+    started.value = !started.value;
   }
 
   void completeExercise() {
-    exercise.state.completed = true;
+    exercise.state.completed.value = true;
 
     router.back();
     onExerciseComplete();
   }
 
   void completeSet() {
-    if (exercise.state.setsDone++ >= exercise.sets - 1) {
+    if (exercise.state.setsDone.value++ >= exercise.sets - 1) {
       completeExercise();
       return;
     }
 
-    update();
     onSetComplete();
     countdownController.restart();
   }

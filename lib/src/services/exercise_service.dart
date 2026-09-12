@@ -1,24 +1,21 @@
 import 'dart:async';
-
 import 'package:geolocator/geolocator.dart';
-import 'package:get/get.dart';
 import 'package:langchain/langchain.dart';
+import 'package:langchain_mistralai/langchain_mistralai.dart';
 import 'package:langchain_google/langchain_google.dart';
 import 'package:yourfit/src/models/index.dart';
+import 'package:yourfit/src/utils/functions/init_services.dart';
+import 'package:yourfit/src/utils/index.dart';
 import 'package:yourfit/src/utils/objects/constants/env/env.dart';
 import 'package:yourfit/src/utils/objects/constants/exercise/response_schema.dart';
-import 'package:yourfit/src/utils/objects/other/exercise/parameter.dart';
-import 'package:yourfit/src/utils/objects/other/supabase/supabase_vectorstore.dart';
-
+import 'package:yourfit/src/utils/objects/supabase/supabase_vectorstore.dart';
 import 'device_service.dart';
 
-class ExerciseService extends GetxService {
-  final DeviceService deviceService = Get.find();
+class ExerciseService {
+  final DeviceService deviceService = Get.find<DeviceService>();
   late final Runnable runnable;
 
-  @override
-  void onInit() {
-    super.onInit();
+  void init() {
     Tool runningDestTool = Tool.fromFunction(
       name: "Running Destination Tool",
       description: "Tool for finding a suitable destination for running",
@@ -49,39 +46,48 @@ class ExerciseService extends GetxService {
         };
       },
     );
+final model = ChatMistralAI(defaultOptions: ChatMistralAIOptions(
+
+  safePrompt: true
+));
+
 
     final agent = ToolsAgent.fromLLMAndTools(
       tools: [runningDestTool],
-      llm: ChatGoogleGenerativeAI(
-        apiKey: Env.geminiKey,
-        defaultOptions: const ChatGoogleGenerativeAIOptions(
-          model: "gemini-2.5-flash",
-          responseMimeType: "application/json",
-          safetySettings: [
-            ChatGoogleGenerativeAISafetySetting(
-              category:
-                  ChatGoogleGenerativeAISafetySettingCategory.sexuallyExplicit,
-              threshold:
-                  ChatGoogleGenerativeAISafetySettingThreshold.blockLowAndAbove,
-            ),
-            ChatGoogleGenerativeAISafetySetting(
-              category: ChatGoogleGenerativeAISafetySettingCategory.hateSpeech,
-              threshold:
-                  ChatGoogleGenerativeAISafetySettingThreshold.blockLowAndAbove,
-            ),
-            ChatGoogleGenerativeAISafetySetting(
-              category:
-                  ChatGoogleGenerativeAISafetySettingCategory.dangerousContent,
-              threshold:
-                  ChatGoogleGenerativeAISafetySettingThreshold.blockLowAndAbove,
-            ),
-          ],
-        ),
-      ),
+      llm: ChatMistralAI(apiKey: "UDbXGBX0J1W6rKQxQD1UUdPolK9F69H4",
+      defaultOptions: ChatMistralAIOptions(
+        model: "ministral-14b-2512"
+      )),
+      // llm: ChatGoogleGenerativeAI(
+      //   apiKey: Env.geminiKey,
+      //   defaultOptions: const ChatGoogleGenerativeAIOptions(
+      //     model: "gemini-2.5-flash",
+      //     responseMimeType: "application/json",
+      //     safetySettings: [
+      //       ChatGoogleGenerativeAISafetySetting(
+      //         category:
+      //             ChatGoogleGenerativeAISafetySettingCategory.sexuallyExplicit,
+      //         threshold:
+      //             ChatGoogleGenerativeAISafetySettingThreshold.blockLowAndAbove,
+      //       ),
+      //       ChatGoogleGenerativeAISafetySetting(
+      //         category: ChatGoogleGenerativeAISafetySettingCategory.hateSpeech,
+      //         threshold:
+      //             ChatGoogleGenerativeAISafetySettingThreshold.blockLowAndAbove,
+      //       ),
+      //       ChatGoogleGenerativeAISafetySetting(
+      //         category:
+      //             ChatGoogleGenerativeAISafetySettingCategory.dangerousContent,
+      //         threshold:
+      //             ChatGoogleGenerativeAISafetySettingThreshold.blockLowAndAbove,
+      //       ),
+      //     ],
+      //   ),
+      // ),
       systemChatMessage: SystemChatMessagePromptTemplate.fromTemplate("""
     ---- Instructions ----
-        You are a extremely considerate, medically accurate fitness trainer.
-        Your task: Provide the user with an appropriate response to the prompt, taking into consideration the parameters provided and their priority.
+        You are a extremely considerate, cautious, medically accurate fitness trainer.
+        Your task: Provide the user with an appropriate response to the prompt, always taking into consideration the parameters provided and their priority.
         Follow these rules:
         1. Response should be based on the given information as well as any additional information found in the dataset.
         2. Response should not contain anything redundant but remain relatively consistent with the historical data provided, increasing the difficulty if appropriate.
@@ -131,10 +137,10 @@ class ExerciseService extends GetxService {
                 for (MapEntry<String, Parameter> entry
                     in (params as Map<String, Parameter>).entries) {
                   buffer.writeln(
-                    "${entry.key}: ${entry.value.value} (priority: ${entry.value.priority ?? ++i}) (description: ${entry.value.description})",
+                    "${entry.key}: ${entry.value.value} (priority: ${entry.value.priority?.name ?? Priority.low}) (description: ${entry.value.description})",
                   );
                 }
-                buffer.printInfo();
+                logger.info("Mapped parameters: $buffer");
                 return buffer.toString();
               }),
         }) |
@@ -142,7 +148,7 @@ class ExerciseService extends GetxService {
           agent: agent,
           maxExecutionTime: Duration(minutes: 1),
           handleParsingErrors: (e) {
-            e.printError();
+            logger.severe("Error in AgentExecutor", e);
             return {};
           },
         ) |
@@ -154,7 +160,7 @@ class ExerciseService extends GetxService {
     Map<String, Parameter> params, {
     Map<String, dynamic>? responseSchema,
   }) async {
-    Get.log("Invoking LLM with parameters: $params");
+    logger.info("Invoking LLM with parameters: $params");
     try {
       Map<String, dynamic> results =
           await runnable.invoke(
@@ -167,10 +173,10 @@ class ExerciseService extends GetxService {
               )
               as Map<String, dynamic>;
 
-      Get.log("Results: $results");
+      logger.info("Results: $results");
       return results;
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in invoke", e);
       return {};
     }
   }
@@ -186,59 +192,59 @@ class ExerciseService extends GetxService {
 
       return await invoke(prompt, {
         "age": Parameter(
-          priority: 1,
+          priority: Priority.critical,
           value: user.age,
           description: "User's age in years",
         ),
-        "goal": Parameter(
-          priority: 1,
-          value: user.goal,
-          description: "User's fitness goal",
+          "disabilities": Parameter(
+          priority: Priority.critical,
+          value: user.disabilities,
+          description: "User's physical limitations or disabilities (extreme caution is required )",
         ),
         "bmi": Parameter(
-          priority: 1,
+          priority: Priority.critical,
           value: user.bmi,
           description: "User's body mass index",
         ),
+        "goal": Parameter(
+          priority: Priority.high,
+          value: user.goal,
+          description: "User's fitness goal",
+        ),
         "physicalFitness": Parameter(
-          priority: 2,
+          priority: Priority.high,
           value: user.physicalFitness,
           description: "User's current physical fitness level",
         ),
         "height": Parameter(
-          priority: 2,
+          priority: Priority.high,
           value: user.height,
           description: "User's height in centimeters (cm)",
         ),
         "weight": Parameter(
-          priority: 2,
+          priority: Priority.high,
           value: user.weight,
           description: "User's weight in pounds (lbs)",
         ),
         "gender": Parameter(
-          priority: 3,
+          priority: Priority.moderate,
           value: user.gender,
           description: "User's gender",
         ),
         "equipment": Parameter(
-          priority: 3,
+          priority: Priority.moderate,
           value: user.equipment,
           description: "Available equipment for workout",
         ),
-        "disabilities": Parameter(
-          priority: 3,
-          value: user.disabilities,
-          description: "User's physical limitations or disabilities",
-        ),
         "workoutData": Parameter(
-          priority: 4,
+          priority: Priority.low,
           value: user.workoutData,
           description: "User's historical workout data",
         ),
         ...additionalParams,
       }, responseSchema: responseSchema);
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in invokeWithUser", e);
       return {};
     }
   }
@@ -260,39 +266,59 @@ class ExerciseService extends GetxService {
         additionalParams: {
           ...additionalParams,
           "workout_exercise_count": Parameter(
-            priority: 5,
+            priority: Priority.moderate,
             value: count,
             description:
                 "Number of exercises in the workout. Provide a value if not provided",
           ),
           "workout_exercise_difficulty": Parameter(
-            priority: 5,
+            priority: Priority.low,
             value: difficulty?.name,
             description: "Desired difficulty level for workout exercises",
           ),
           "workout_exercise_intensity": Parameter(
-            priority: 5,
+            priority: Priority.low,
             value: intensity?.name,
             description: "Desired intensity level for workout exercises",
           ),
           "workout_exercise_type": Parameter(
-            priority: 5,
+            priority: Priority.moderate,
             value: type?.name,
             description: "Type of exercise (strength, cardio, etc.)",
           ),
           "workout_focus": Parameter(
-            priority: 6,
+            priority: Priority.moderate,
             value: focus?.name,
             description: "Desired focus for the overall workout.",
           ),
         },
         responseSchema: ResponseSchema.workout,
       );
-      Get.log("[getExercises] Result $result");
+      logger.info("[getExercises] Result $result");
       return result.isEmpty ? null : WorkoutData.fromMap(result);
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error getting exercises", e);
       return null;
     }
   }
+}
+
+
+enum Priority {
+  critical,
+  high,
+  moderate,
+  low;
+}
+
+class Parameter {
+  final Priority? priority;
+  final String? description;
+  final Object? value;
+
+  const Parameter({this.priority, this.description, this.value});
+
+  @override
+  String toString() =>
+      'Parameter(priority: $priority, description: $description, value: $value)';
 }

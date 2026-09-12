@@ -1,6 +1,6 @@
 import 'package:custom_button_builder/custom_button_builder.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:yourfit/src/utils/index.dart';
 
 class AsyncAnimatedButton extends StatelessWidget {
   final Future Function()? onPressed;
@@ -38,7 +38,10 @@ class AsyncAnimatedButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(_AsyncAnimatedButtonController(), tag: _tag);
+    final controller = Get.put(
+      _AsyncAnimatedButtonController(),
+      tag: _tag,
+    );
     return CustomButton(
       onPressed: () =>
           controller.handleOnPressed(onPressed, showLoadingIndicator),
@@ -49,9 +52,8 @@ class AsyncAnimatedButton extends StatelessWidget {
       animate: animate,
       isThreeD: isThreeD,
       borderRadius: borderRadius,
-      child: GetBuilder<_AsyncAnimatedButtonController>(
-        tag: _tag,
-        builder: (controller) => controller.isLoading
+      child: Obx(
+        () => controller.isLoading.value
             ? CircularProgressIndicator(color: loadingIndicatorColor)
             : child,
       ),
@@ -59,8 +61,8 @@ class AsyncAnimatedButton extends StatelessWidget {
   }
 }
 
-class _AsyncAnimatedButtonController extends GetxController {
-  bool isLoading = false;
+class _AsyncAnimatedButtonController {
+  final isLoading = false.obs;
 
   Future<void> handleOnPressed(
     Future Function()? onPressed,
@@ -70,13 +72,10 @@ class _AsyncAnimatedButtonController extends GetxController {
 
     if (loadingAnimation) {
       try {
-        isLoading = true;
-        update();
-
+        isLoading.value = true;
         await onPressed();
       } finally {
-        isLoading = false;
-        update();
+        isLoading.value = false;
       }
     } else {
       await onPressed();

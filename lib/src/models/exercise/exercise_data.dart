@@ -1,4 +1,5 @@
 import 'package:dart_mappable/dart_mappable.dart';
+import 'package:rxget/rxget.dart';
 
 part 'exercise_data.mapper.dart';
 
@@ -99,10 +100,12 @@ class RestInterval with RestIntervalMappable {
 
 @MappableClass()
 class ExerciseState with ExerciseStateMappable {
-  bool completed;
-  int setsDone;
+  Rx<bool> completed;
+  Rx<int> setsDone;
 
-  ExerciseState({required this.completed, required this.setsDone});
+  ExerciseState({required bool completed, required int setsDone})
+    : completed = Rx<bool>(completed),
+      setsDone = Rx<int>(setsDone);
 
   factory ExerciseState.fromJson(String json) =>
       ExerciseStateMapper.fromJson(json);

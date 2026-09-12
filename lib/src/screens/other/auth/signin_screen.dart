@@ -1,14 +1,15 @@
 import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthResponse;
 import 'package:yourfit/src/models/auth/auth_response.dart';
 import 'package:yourfit/src/utils/index.dart';
 import 'package:yourfit/src/routing/index.dart';
 import 'package:yourfit/src/widgets/index.dart';
+import 'package:rxget/rxget.dart';
 
 @RoutePage()
 class SignInScreen extends StatelessWidget {
@@ -16,7 +17,7 @@ class SignInScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(_SignInController());
+    final controller = Get.put(_SignInController(), tag: 'sign-in');
     return Scaffold(
       body: AuthForm(
         formKey: controller.formKey,
@@ -73,8 +74,9 @@ class SignInScreen extends StatelessWidget {
 }
 
 class _SignInController extends AuthFormController {
-  final AppRouter router = Get.find();
-
+  final AppRouter router = Get.find<AppRouter>();
+  final Logger logger = Get.find<Logger>();
+  
   Future<void> signIn({OAuthProvider? provider}) async {
     try {
       if (provider != null) {
@@ -95,14 +97,14 @@ class _SignInController extends AuthFormController {
       );
 
       if (response.code == AuthCode.error) {
-        response.message.printError();
+       logger.severe("Error signing in: ${response.message}");
         showSnackbar(response.message!, AnimatedSnackBarType.error);
         return;
       }
 
       router.replacePath(Routes.main);
     } catch (e) {
-      e.printError();
+      logger.severe("Error signing in", e);
       showSnackbar(e.toString(), AnimatedSnackBarType.error);
     }
   }

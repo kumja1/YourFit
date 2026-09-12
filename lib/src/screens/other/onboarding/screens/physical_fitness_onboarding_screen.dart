@@ -1,24 +1,23 @@
 import 'package:choice/choice.dart';
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:rxget/rxget.dart';
 import 'package:yourfit/src/models/user_data.dart';
+import 'package:yourfit/src/utils/functions/init_services.dart';
 import 'package:yourfit/src/widgets/other/animated_choice_chip.dart';
 import 'package:yourfit/src/widgets/other/onboarding_screen.dart';
 
 class PhysicalFitnessOnboardingScreen extends OnboardingScreen {
-  const PhysicalFitnessOnboardingScreen({super.key});
+  PhysicalFitnessOnboardingScreen({super.key});
 
   // ignore: library_private_types_in_public_api
-  _PhysicalFitnessOnboardingScreenController get controller =>
-      Get.put(_PhysicalFitnessOnboardingScreenController());
+  final _PhysicalFitnessOnboardingScreenController controller = _PhysicalFitnessOnboardingScreenController();
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<_PhysicalFitnessOnboardingScreenController>(
-      init: _PhysicalFitnessOnboardingScreenController(),
-      builder: (controller) => InlineChoice<UserPhysicalFitness>.single(
-        value: controller.selectedChoice,
+    return Obx(
+      () => InlineChoice<UserPhysicalFitness>.single(
+        value: controller.selectedChoice.value,
         onChanged: controller.setChoice,
         itemCount: controller.choices.length,
         itemBuilder: (choiceController, i) => AnimatedChoiceChip(
@@ -43,14 +42,14 @@ class PhysicalFitnessOnboardingScreen extends OnboardingScreen {
 
   @override
   Map<String, dynamic> getData() => {
-    "physicalFitness": controller.selectedChoice,
+    "physicalFitness": controller.selectedChoice.value,
   };
 
   @override
-  bool canProgress() => controller.selectedChoice != null;
+  bool canProgress() => controller.selectedChoice.value != null;
 }
 
-class _PhysicalFitnessOnboardingScreenController extends GetxController {
+class _PhysicalFitnessOnboardingScreenController {
   final choices = [
     UserPhysicalFitness.minimal,
     UserPhysicalFitness.light,
@@ -58,10 +57,9 @@ class _PhysicalFitnessOnboardingScreenController extends GetxController {
     UserPhysicalFitness.extreme,
   ];
 
-  UserPhysicalFitness? selectedChoice;
+  final Rx<UserPhysicalFitness?> selectedChoice = Rx<UserPhysicalFitness?>(null);
 
-  void setChoice(UserPhysicalFitness? value) {
-    selectedChoice = value;
-    update();
+  void setChoice(UserPhysicalFitness? choice) {
+    selectedChoice.value = choice;
   }
 }

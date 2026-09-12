@@ -1,21 +1,26 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:yourfit/src/routing/router.dart';
-import 'package:yourfit/src/utils/functions/init_services.dart';
+import 'package:yourfit/src/utils/functions/index.dart';
+import 'package:zenify/zenify.dart';
 
 void main() async {
   await initServices();
-  runApp(const YourFitApp());
+  initLogging();
+  runApp(YourFitApp());
 }
 
 class YourFitApp extends StatelessWidget {
-  const YourFitApp({super.key});
+  final navigatorKey = GlobalKey<NavigatorState>();
+  YourFitApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final AppRouter router = Get.put(AppRouter(navigatorKey: Get.key));
-
-    return GetMaterialApp.router(
+    final AppRouter router = Zen.put(
+      AppRouter(navigatorKey: navigatorKey),
+      isPermanent: true,
+    );
+    
+    return MaterialApp.router(
       routerDelegate: router.delegate(),
       routeInformationParser: router.defaultRouteParser(),
       routeInformationProvider: router.routeInfoProvider(),

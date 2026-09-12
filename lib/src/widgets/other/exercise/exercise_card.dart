@@ -1,7 +1,7 @@
 // lib/src/screens/tabs/exercise/widgets/exercise_card.dart
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/get_state_manager.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:rxget/rxget.dart';
 import 'package:yourfit/src/models/exercise/exercise_data.dart';
 import 'package:yourfit/src/widgets/buttons/animated_button.dart';
 
@@ -50,12 +50,19 @@ class ExerciseCard extends StatelessWidget {
   }
 }
 
-class ExerciseCardController extends GetxController {
+class ExerciseCardController extends GetxController<_ExerciseCardState> {
+  @override
+  final _ExerciseCardState state = _ExerciseCardState();
   bool disabled;
   ExerciseCardController(ExerciseData exercise) : disabled = exercise.state.completed;
 
   void toggleDisabled() {
     disabled = !disabled;
     update();
+  }
+
+  final class _ExerciseCardState extends GetxState {
+    @override
+    void onClose() {}
   }
 }

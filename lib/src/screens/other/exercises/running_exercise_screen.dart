@@ -1,9 +1,8 @@
 import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:get/get.dart';
 import 'package:open_route_service/open_route_service.dart';
 import 'package:yourfit/src/models/exercise/running_exercise_data.dart';
 import 'package:yourfit/src/screens/other/exercises/basic_exercise_screen.dart';
@@ -13,7 +12,7 @@ import 'package:yourfit/src/widgets/other/navigation_map.dart';
 
 @RoutePage()
 class RunningExerciseScreen extends BasicExerciseScreen {
-  RunningExerciseScreen({
+  const RunningExerciseScreen({
     super.key,
     required super.exercise,
     required super.onSetComplete,
@@ -22,12 +21,7 @@ class RunningExerciseScreen extends BasicExerciseScreen {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(
-      _RunningExerciseScreenController(
-        exercise: exercise as RunningExerciseData,
-      ),
-    );
-
+    final controller = _RunningExerciseScreenController(exercise: exercise as RunningExerciseData);
     return Scaffold(
       body: FutureBuilder(
         future: controller.init(),
@@ -38,7 +32,7 @@ class RunningExerciseScreen extends BasicExerciseScreen {
 
           if (snapshot.hasError || snapshot.data == false) {
             if (snapshot.hasError) {
-              snapshot.error.printError();
+              logger.severe("Error in RunningExerciseScreen", snapshot.error);
             }
 
             return const SizedBox.shrink();
@@ -54,9 +48,9 @@ class RunningExerciseScreen extends BasicExerciseScreen {
   }
 }
 
-class _RunningExerciseScreenController extends GetxController {
+class _RunningExerciseScreenController {
   final RunningExerciseData exercise;
-  final DeviceService deviceService = Get.find();
+  final DeviceService deviceService = Get.find<DeviceService>();
 
   late ({
     Position start,
@@ -76,14 +70,14 @@ class _RunningExerciseScreenController extends GetxController {
       );
 
       if (route == null || route!.segment.steps.isEmpty) {
-        Get.log("[_RunningExerciseScreenController] Route is malformed!");
+        logger.severe("Route is null or has no steps!");
         return false;
       }
 
       return true;
     } on Error catch (e) {
-      e.printError();
-      showSnackbar(e.toString(), AnimatedSnackBarType.error);
+      logger.severe("Error in _RunningExerciseScreenController.init", e);
+      // showSnackbar(e.toString(), AnimatedSnackBarType.error);
       return false;
     }
   }

@@ -1,10 +1,9 @@
 import 'dart:math' as math;
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:get/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:langchain/langchain.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:yourfit/src/utils/objects/other/supabase/vector_store_hybrid_search.dart';
+import 'package:yourfit/src/utils/index.dart';
 
 /// {@template supabase}
 /// Vector store for [Supabase Vector](https://supabase.com/vector)
@@ -77,10 +76,10 @@ class Supabase extends VectorStore {
   ///   you need further customization (e.g. to use a Socks5 proxy).
   Supabase({
     this.tableName = 'documents',
-    required final String supabaseUrl,
-    required final String supabaseKey,
-    final Map<String, String> headers = const {},
-    final http.Client? client,
+    required  String supabaseUrl,
+    required  String supabaseKey,
+     Map<String, String> headers = const {},
+     http.Client? client,
     required super.embeddings,
   }) : _client = SupabaseClient(
          supabaseUrl,
@@ -106,8 +105,8 @@ class Supabase extends VectorStore {
   ///   [VectorStoreSearchType.mmr].
   @override
   Future<List<Document>> search({
-    required final String query,
-    required final VectorStoreSearchType searchType,
+    required  String query,
+    required  VectorStoreSearchType searchType,
   }) async {
     try {
       final queryEmbedding = await embeddings.embedQuery(query);
@@ -130,15 +129,15 @@ class Supabase extends VectorStore {
       };
       return docs as List<Document>;
     } catch (e) {
-      e.printError(info: "Error during search");
+      logger.severe("Error during search", e);
       return [];
     }
   }
 
   @override
   Future<List<String>> addVectors({
-    required final List<List<double>> vectors,
-    required final List<Document> documents,
+    required  List<List<double>> vectors,
+    required  List<Document> documents,
   }) async {
     try {
       assert(vectors.length == documents.length);
@@ -156,25 +155,25 @@ class Supabase extends VectorStore {
 
       final ids = await _client.from(tableName).upsert(records).select('id');
       return ids
-          .map((final row) => row['id'])
-          .map((final id) => id.toString())
+          .map(( row) => row['id'])
+          .map(( id) => id.toString())
           .toList(growable: false);
     } catch (e) {
-      e.printError(info: "Error adding vectors");
+      logger.severe("Error adding vectors", e);
       return [];
     }
   }
 
   @override
-  Future<void> delete({required final List<String> ids}) {
+  Future<void> delete({required  List<String> ids}) {
     return _client.from(tableName).delete().filter('id', 'in', ids);
   }
 
   @override
   Future<List<(Document, double similarity)>>
   similaritySearchByVectorWithScores({
-    required final List<double> embedding,
-    final VectorStoreSimilaritySearch config =
+    required  List<double> embedding,
+     VectorStoreSimilaritySearch config =
         const VectorStoreSimilaritySearch(),
   }) async {
     try {
@@ -186,7 +185,7 @@ class Supabase extends VectorStore {
           .map((doc) => (doc.document, doc.similarity))
           .toList(growable: false);
     } catch (e) {
-      e.printError(info:"Error during similarity search with scores");
+      logger.severe("Error during similarity search with scores", e);
       return [];
     }
   }
@@ -195,8 +194,8 @@ class Supabase extends VectorStore {
     List<({Document document, List<double> embeddings, double similarity})>
   >
   similaritySearchByVectorWithScoresAndEmbeddings({
-    required final List<double> embedding,
-    final VectorStoreSimilaritySearch config =
+    required  List<double> embedding,
+     VectorStoreSimilaritySearch config =
         const VectorStoreSimilaritySearch(),
   }) async {
     try {
@@ -213,9 +212,9 @@ class Supabase extends VectorStore {
       );
 
       return result
-          .map((final row) => row as Map<String, dynamic>)
+          .map(( row) => row as Map<String, dynamic>)
           .map(
-            (final row) => (
+            ( row) => (
               document: Document(
                 id: row['id'].toString(),
                 pageContent: row['content'] as String,
@@ -230,17 +229,17 @@ class Supabase extends VectorStore {
           )
           .toList(growable: false);
     } catch (e) {
-      e.printError(info: "Error during similarity search with scores and embeddings");
+      logger.severe("Error during similarity search with scores and embeddings", e);
       return [];
     }
   }
 
   Future<List<Document>> maxMarginalRelevanceSearchByVectorAsync({
-    required final List<double> embedding,
-    final VectorStoreMMRSearch config = const VectorStoreMMRSearch(),
+    required  List<double> embedding,
+     VectorStoreMMRSearch config = const VectorStoreMMRSearch(),
   }) async {
     try {
-      Get.log(
+      logger.info(
         "MMR search: fetching ${config.fetchK} candidates, target: ${config.k}, λ: ${config.lambdaMult}",
       );
 
@@ -251,7 +250,7 @@ class Supabase extends VectorStore {
       );
 
       if (docs.isEmpty) {
-        Get.log("MMR: no documents retrieved");
+        logger.info("MMR: no documents retrieved");
         return [];
       }
 
@@ -259,8 +258,8 @@ class Supabase extends VectorStore {
         ...docs.map((doc) => doc.embeddings),
       ];
 
-      Get.log("MMR: ${embeddings.length} embeddings retrieved");
-      Get.log(
+      logger.info("MMR: ${embeddings.length} embeddings retrieved");
+      logger.info(
         "MMR: initial similarities: ${docs.map((d) => d.similarity.toStringAsFixed(3)).join(', ')}",
       );
 
@@ -269,7 +268,7 @@ class Supabase extends VectorStore {
         embeddings,
       ).first;
 
-      Get.log(
+      logger.info(
         "MMR: starting with most similar index $mostSimilarEmbeddingIndex",
       );
 
@@ -279,7 +278,7 @@ class Supabase extends VectorStore {
         (index, doc) => MapEntry(index, doc.similarity),
       );
 
-      Get.log(
+      logger.info(
         "MMR: similarity map keys: ${similaritiesAndIndexes.keys.toList()}",
       );
 
@@ -287,8 +286,8 @@ class Supabase extends VectorStore {
       while (selectedEmbeddingsIndexes.length <
           math.min(config.k, embeddings.length)) {
         iteration++;
-        Get.log("\n--- MMR Iteration $iteration ---");
-        Get.log("Current selection: ${selectedEmbeddingsIndexes.join(', ')}");
+        logger.info("\n--- MMR Iteration $iteration ---");
+        logger.info("Current selection: ${selectedEmbeddingsIndexes.join(', ')}");
 
         double bestScore = double.negativeInfinity;
         int bestIndex = -1;
@@ -300,7 +299,7 @@ class Supabase extends VectorStore {
             ),
           ];
 
-          Get.log(
+          logger.info(
             "Similarity matrix: ${similarityToSelected.length} rows × ${similarityToSelected.first.length} cols",
           );
 
@@ -323,24 +322,24 @@ class Supabase extends VectorStore {
             if (score > bestScore) {
               bestScore = score;
               bestIndex = index;
-              Get.log("  ^ NEW BEST");
+              logger.info("  ^ NEW BEST");
             }
           });
 
-          Get.log("Checked $candidatesChecked candidates");
+          logger.info("Checked $candidatesChecked candidates");
 
           if (bestIndex == -1) {
-            Get.log("No valid candidate found, breaking");
+            logger.info("No valid candidate found, breaking");
             break;
           }
 
           selectedEmbeddings.add(embeddings[bestIndex]);
           selectedEmbeddingsIndexes.add(bestIndex);
-          Get.log(
+          logger.info(
             "Selected index $bestIndex with MMR score ${bestScore.toStringAsFixed(3)}",
           );
         } catch (e) {
-          Get.log("MMR iteration $iteration error: $e");
+          logger.severe("MMR iteration $iteration error", e);
           break;
         }
       }
@@ -349,7 +348,7 @@ class Supabase extends VectorStore {
           .map((item) => item.$2.document)
           .toList();
     } catch (e) {
-      e.printError(info: "Error during MMR search");
+      logger.severe("Error during MMR search", e);
       return [];
     }
   }
@@ -357,7 +356,7 @@ class Supabase extends VectorStore {
   Future<List<Document>> hybridSearch({
     required String query,
     required List<double> embedding,
-    final VectorStoreHybridSearch config = const VectorStoreHybridSearch(),
+     VectorStoreHybridSearch config = const VectorStoreHybridSearch(),
   }) async {
     try {
       return await hybridSearchByVector(
@@ -366,7 +365,7 @@ class Supabase extends VectorStore {
         config: config,
       );
     } catch (e) {
-      e.printError(info: "Error during hybrid search");
+      logger.severe("Error during hybrid search", e);
       return [];
     }
   }
@@ -392,9 +391,9 @@ class Supabase extends VectorStore {
       );
 
       return result
-          .map((final row) => row as Map<String, dynamic>)
+          .map(( row) => row as Map<String, dynamic>)
           .map(
-            (final row) => Document(
+            ( row) => Document(
               id: row['id'].toString(),
               pageContent: row['content'] as String,
               metadata: row['metadata'] as Map<String, dynamic>,
@@ -402,7 +401,7 @@ class Supabase extends VectorStore {
           )
           .toList(growable: false);
     } catch (e) {
-      e.printError(info: "Error during hybrid search by vector");
+      logger.severe("Error during hybrid search by vector", e);
       return [];
     }
   }

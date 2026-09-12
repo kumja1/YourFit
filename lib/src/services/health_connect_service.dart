@@ -1,20 +1,20 @@
 import 'dart:core';
 import 'package:const_date_time/const_date_time.dart';
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:get/get.dart';
 import 'package:health/health.dart';
+import 'package:yourfit/src/utils/functions/init_logging.dart';
+import 'package:yourfit/src/utils/functions/init_services.dart';
+
 import 'device_service.dart';
 
-class HealthConnectService extends GetxService {
-  final deviceService = DeviceService();
+class HealthConnectService {
+  final deviceService = Get.find<DeviceService>();
   final health = Health();
 
   bool _enabled = false;
 
-  @override
-  Future<void> onReady() async {
+  Future<void> init() async {
     _enabled = await _requestHealthDataPermissions();
-    super.onReady();
   }
 
   Future<bool> _requestHealthDataPermissions() async {
@@ -48,7 +48,7 @@ class HealthConnectService extends GetxService {
       deviceService.setDevicePreference("health_connect_enabled", allowed);
       return allowed;
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in _requestHealthDataPermissions", e);
       return false;
     }
   }
@@ -79,12 +79,9 @@ class HealthConnectService extends GetxService {
       types: types,
       startTime: from,
       endTime: to,
-      preferredUnits: {
-      }
+      preferredUnits: {},
     ));
-    
-    health.getHealthIntervalDataFromTypes(startDate: startDate, endDate: endDate, types: types, interval: interval)
+
+    // health.getHealthIntervalDataFromTypes(startDate: startDate, endDate: endDate, types: types, interval: interval)
   }
-  
-  
 }

@@ -1,8 +1,7 @@
 // lib/src/screens/tabs/exercise/workouts_screen.dart
 import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:langchain/langchain.dart';
 import 'package:logging/logging.dart';
 import 'package:yourfit/src/models/exercise/running_exercise_data.dart';
@@ -11,8 +10,8 @@ import 'package:yourfit/src/routing/router.gr.dart';
 import 'package:yourfit/src/services/device_service.dart';
 import 'package:yourfit/src/services/index.dart';
 import 'package:yourfit/src/utils/functions/show_snackbar.dart';
-import 'package:yourfit/src/utils/objects/other/exercise/parameter.dart';
 import 'package:yourfit/src/widgets/other/exercise/index.dart';
+import 'package:rxget/rxget.dart';
 
 @RoutePage()
 class ExerciseScreen extends StatelessWidget {
@@ -183,7 +182,9 @@ class ExerciseScreen extends StatelessWidget {
   }
 }
 
-class _ExerciseScreenController extends GetxController {
+class _ExerciseScreenController extends GetxController<_ExerciseScreenState> {
+  @override
+  final _ExerciseScreenState state = _ExerciseScreenState();
   final UserService userService = Get.find();
   final ExerciseService exerciseService = Get.find();
   final DeviceService deviceService = Get.find();
@@ -305,6 +306,11 @@ class _ExerciseScreenController extends GetxController {
 
     if (now.difference(timestamp).inDays < 1) {
       return;
+    }
+
+    final class _ExerciseScreenState extends GetxState {
+      @override
+      void onClose() {}
     }
 
     deviceService.setDevicePreference(

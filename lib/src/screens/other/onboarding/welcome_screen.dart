@@ -1,13 +1,14 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide WidgetPaddingX;
+import 'package:material_ui/material_ui.dart';
 import 'package:introduction_screen/introduction_screen.dart';
+import 'package:rxget/rxget.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
 import 'package:yourfit/src/routing/router.dart';
 import 'package:yourfit/src/routing/router.gr.dart';
 import 'package:yourfit/src/screens/other/onboarding/screens/physical_fitness_onboarding_screen.dart';
 import 'package:yourfit/src/screens/other/onboarding/screens/user_info_onboarding_screen.dart';
+import 'package:yourfit/src/utils/index.dart';
 import 'package:yourfit/src/widgets/buttons/animated_button.dart';
 import 'package:yourfit/src/widgets/other/onboarding_screen.dart';
 
@@ -19,7 +20,7 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(_WelcomeScreenController(), tag:_tag );
+    final controller = Get.put(_WelcomeScreenController(), tag: _tag);
 
     return IntroductionScreen(
       key: controller.onboardingKey,
@@ -31,9 +32,8 @@ class WelcomeScreen extends StatelessWidget {
       isProgress: false,
       globalHeader: Stack(
         children: [
-          GetBuilder<_WelcomeScreenController>(
-            tag: _tag,
-            builder: (controller) => IconButton(
+          Obx(
+            () => IconButton(
               constraints: BoxConstraints.tightFor(width: 29.5, height: 29.5),
               iconSize: 30,
               onPressed: () => controller.previous(),
@@ -41,15 +41,15 @@ class WelcomeScreen extends StatelessWidget {
                 Icons.keyboard_arrow_left_rounded,
                 color: Colors.black12,
               ),
-            ).showIf(controller.currentIndex >= 1),
+            ).showIf(controller.currentIndex.value >= 1),
           ).align(Alignment.centerLeft).fill(),
-          GetBuilder<_WelcomeScreenController>(
-            tag: _tag,
-            builder: (controller) => StepProgressIndicator(
+          ),
+          Obx(
+          () => StepProgressIndicator(
               size: 10,
               totalSteps: controller.pages.length,
               padding: 0,
-              currentStep: controller.currentIndex,
+              currentStep: controller.currentIndex.value,
               roundedEdges: const Radius.circular(10),
               crossAxisAlignment: CrossAxisAlignment.start,
               unselectedColor: Colors.grey[200]!,
@@ -70,24 +70,23 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
-class _WelcomeScreenController extends GetxController {
+class _WelcomeScreenController extends RxController {
   final onboardingKey = GlobalKey<IntroductionScreenState>();
-  final AppRouter router = Get.find();
+  final AppRouter router = Get.find<AppRouter>();
 
   final List<OnboardingScreen> pages = const [
     UserInfoOnboardingScreen(),
     PhysicalFitnessOnboardingScreen(),
   ];
 
-  int currentIndex = 0;
+  final Rx<int> currentIndex = 0.obs;
   int previousIndex = 0;
   Map<String, dynamic> onboardingData = {};
 
   void setCurrentIndex(int index) {
-    if (index > pages.length || index <= 0) return;
-    previousIndex = currentIndex;
-    currentIndex = index;
-    update();
+    if (index > pages.length || index < 0) return;
+    previousIndex = currentIndex.value;
+    currentIndex.value = index;
 
     final data = pages[previousIndex].getData();
     if (data != null) {
@@ -105,15 +104,15 @@ class _WelcomeScreenController extends GetxController {
     bool progress = pages[currentIndex].canProgress();
     if (progress) {
       onboardingKey.currentState?.next();
-      setCurrentIndex(currentIndex + 1);
-      if (currentIndex == pages.length) {
+      setCurrentIndex(currentIndex.value + 1);
+      if (currentIndex.value == pages.length) {
         router.popAndPush(SignUpRoute(onboardingData: onboardingData));
       }
     }
   }
 
   void previous() {
-    setCurrentIndex(currentIndex - 1);
+    setCurrentIndex(currentIndex.value - 1);
     onboardingKey.currentState?.previous();
   }
 }

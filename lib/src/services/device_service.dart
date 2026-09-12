@@ -1,13 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:get/get.dart';
 import 'package:open_route_service/open_route_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:yourfit/src/utils/extensions/location_extensions.dart';
+import 'package:yourfit/src/utils/extensions/position_extension.dart';
 import 'package:yourfit/src/utils/index.dart';
 
-class DeviceService extends GetxService {
+class DeviceService() {
   final OpenRouteService locationClient = OpenRouteService(
     apiKey: Env.openRouteKey,
   );
@@ -33,7 +32,7 @@ class DeviceService extends GetxService {
           ? preferences.setBool(key, value)
           : preferences.setString(key, converter(value)));
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in setDevicePreference", e);
     }
   }
 
@@ -52,7 +51,7 @@ class DeviceService extends GetxService {
           ? preferences.getBool(key) as T
           : converter(preferences.getString(key)!);
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in getDevicePreference", e);
       return null;
     }
   }
@@ -80,7 +79,7 @@ class DeviceService extends GetxService {
 
       return !denied;
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in _requestDeviceLocationPermission", e);
       return false;
     }
   }
@@ -91,7 +90,7 @@ class DeviceService extends GetxService {
     try {
       return Geolocator.getPositionStream(locationSettings: locationSettings);
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in getDevicePositionStream", e);
       return null;
     }
   }
@@ -120,7 +119,7 @@ class DeviceService extends GetxService {
         )..distance = e.properties["distance"] as double;
       }).toList();
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in getPositionsNearDevice", e);
       return [];
     }
   }
@@ -208,7 +207,7 @@ class DeviceService extends GetxService {
         geometry: route.geometry,
       );
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in getRouteFromDevicePosition", e);
       return null;
     }
   }
@@ -250,7 +249,7 @@ class DeviceService extends GetxService {
       await speech.stop();
       await speech.speak(text);
     } on Error catch (e) {
-      e.printError();
+      logger.severe("Error in speak", e);
     }
   }
 }

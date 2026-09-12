@@ -1,16 +1,17 @@
 import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:auto_route/annotations.dart';
 import 'package:extensions_plus/extensions_plus.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:get/get.dart' hide WidgetPaddingX;
 import 'package:yourfit/src/models/index.dart';
 import 'package:yourfit/src/routing/index.dart';
 import 'package:yourfit/src/services/auth_service.dart';
 import 'package:yourfit/src/services/user_service.dart';
+import 'package:yourfit/src/utils/functions/init_services.dart';
 import 'package:yourfit/src/utils/functions/show_snackbar.dart';
 import 'package:yourfit/src/widgets/index.dart';
+import 'package:rxget/rxget.dart';
 
 @RoutePage()
 class ProfileScreen extends StatelessWidget {
@@ -50,18 +51,19 @@ class ProfileScreen extends StatelessWidget {
       ).scrollable().safeArea(),
     );
   }
+
 }
 
-class _ProfileScreenController extends GetxController {
-  final AuthService authService = Get.find();
+class _ProfileScreenController {
+  final AuthService authService = Get.find<AuthService>();
   final Rx<UserData?> currentUser = Get.find<AuthService>().currentUser;
-  final UserService userService = Get.find();
-  final AppRouter router = Get.find();
+  final UserService userService = Get.find<UserService>();
+  final AppRouter router = Get.find<AppRouter>();
   final formKey = GlobalKey<FormBuilderState>();
 
-  void editBasics() async {
+  void editBasics(BuildContext context) async {
     if (currentUser.value == null) return;
-    await showBottomFormSheet(
+    await showBottomFormSheet(context: context,
       title: 'Edit Basics',
       fields: [
         FormBuilderTextField(
@@ -99,10 +101,10 @@ class _ProfileScreenController extends GetxController {
     );
   }
 
-  void editGoal() async {
+  void editGoal(BuildContext context) async {
     if (currentUser.value == null) return;
 
-    await showBottomFormSheet(
+    await showBottomFormSheet(context: context,
       title: 'Edit Goal',
       fields: [
         FormBuilderTextField(
@@ -115,9 +117,9 @@ class _ProfileScreenController extends GetxController {
     );
   }
 
-  void editTraining() async {
+  void editTraining(BuildContext context) async {
     if (currentUser.value == null) return;
-    await showBottomFormSheet(
+    await showBottomFormSheet(context: context,
       title: 'Edit Training',
       fields: [
         FormBuilderDropdown(
@@ -155,9 +157,9 @@ class _ProfileScreenController extends GetxController {
     );
   }
 
-  void editEquipment() async {
+  void editEquipment(BuildContext context) async {
     if (currentUser.value == null) return;
-    await showBottomFormSheet(
+    await showBottomFormSheet(context: context,
       title: 'Edit Equipment',
       fields: [
         FormBuilderTextField(
@@ -173,10 +175,10 @@ class _ProfileScreenController extends GetxController {
     );
   }
 
-  void editDisabilities() async {
+  void editDisabilities(BuildContext context) async {
     if (currentUser.value == null) return;
 
-    await showBottomFormSheet(
+    await showBottomFormSheet(context: context,
       title: 'Edit Disabilities',
       fields: [
         FormBuilderTextField(
@@ -193,10 +195,11 @@ class _ProfileScreenController extends GetxController {
   }
 
   Future<void> showBottomFormSheet({
+    required BuildContext context,
     required String title,
     required List<Widget> fields,
   }) async => await showModalBottomSheet(
-    context: Get.context!,
+    context: context,
     isScrollControlled: true,
     showDragHandle: true,
     shape: const RoundedRectangleBorder(
@@ -240,7 +243,7 @@ class _ProfileScreenController extends GetxController {
                           return;
                         }
 
-                        Get.back();
+                        Navigator.pop(ctx);
                         if (currentUser.value == null) {
                           return;
                         }
@@ -459,7 +462,7 @@ class _ProfileHeader extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: controller.editBasics,
+                    onPressed: () => controller.editBasics(context),
                     icon: const Icon(Icons.edit),
                   ),
                 ],
@@ -486,7 +489,7 @@ class _GoalSection extends StatelessWidget {
         : _ProfileSectionCard(
             title: 'Goal',
             trailing: IconButton(
-              onPressed: controller.editGoal,
+              onPressed: () => controller.editGoal(context),
               icon: const Icon(Icons.edit),
             ),
             child: Obx(
@@ -516,7 +519,7 @@ class _TrainingSection extends StatelessWidget {
         : _ProfileSectionCard(
             title: 'Training',
             trailing: IconButton(
-              onPressed: controller.editTraining,
+              onPressed: () => controller.editTraining(context),
               icon: const Icon(Icons.edit),
             ),
             child: Column(
@@ -563,11 +566,11 @@ class _EquipmentSection extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  onPressed: controller.editEquipment,
+                  onPressed: () => controller.editEquipment(context),
                   icon: const Icon(Icons.edit),
                 ),
                 IconButton(
-                  onPressed: controller.editDisabilities,
+                  onPressed: () => controller.editDisabilities(context),
                   icon: const Icon(Icons.healing),
                 ),
               ],

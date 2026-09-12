@@ -1,11 +1,10 @@
 import 'dart:convert';
-
 import 'package:auto_route/annotations.dart';
 import 'package:const_date_time/const_date_time.dart';
 import 'package:date_picker_plus/date_picker_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide Response;
+import 'package:material_ui/material_ui.dart';
 import 'package:http/http.dart';
+import 'package:rxget/rxget.dart';
 import 'package:yourfit/src/models/index.dart';
 import 'package:yourfit/src/models/nutrition/food_search_result.dart';
 import 'package:yourfit/src/models/nutrition/meal_data.dart';
@@ -77,8 +76,10 @@ class RoadmapScreen extends StatelessWidget {
   }
 }
 
-class RoadmapController extends GetxController {
-  final DeviceService deviceService = Get.find();
+class RoadmapController extends GetxController<_RoadmapState> {
+  @override
+  final _RoadmapState state = _RoadmapState();
+  final DeviceService deviceService = Get.find<DeviceService>();
   final Rx<UserData?> currentUser = Get.find<AuthService>().currentUser;
 
   final searchController = TextEditingController();
@@ -109,6 +110,12 @@ class RoadmapController extends GetxController {
 
   Map<String, WorkoutFocus> workoutPlans = {};
 
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
+  }
+
   WorkoutFocus? get selectedWorkout => getWorkoutForDate(selectedDay);
 
   String get selectedDateName =>
@@ -118,10 +125,13 @@ class RoadmapController extends GetxController {
 
   List<FoodSearchResult> recentFoods = [];
 
-  @override
-  void onInit() {
-    super.onInit();
+  void init() {
     _initPrefs();
+  }
+
+  final class _RoadmapState extends GetxState {
+    @override
+    void onClose() {}
   }
 
   Future<void> _initPrefs() async {
@@ -132,7 +142,6 @@ class RoadmapController extends GetxController {
     if (workoutPlans.isEmpty) {
       await generateMonthlyPlan();
     } else {
-      update();
     }
   }
 

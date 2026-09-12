@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:rxget/rxget.dart';
 
 class AiInsightsPanel extends StatelessWidget {
   const AiInsightsPanel({
@@ -208,7 +208,9 @@ class AiInsightsPanel extends StatelessWidget {
   }
 }
 
-class _AiInsightsPanelController extends GetxController {
+class _AiInsightsPanelController extends GetxController<_AiInsightsPanelState> {
+  @override
+  final _AiInsightsPanelState state = _AiInsightsPanelState();
   final textController = TextEditingController();
   bool expanded = true;
 
@@ -222,6 +224,11 @@ class _AiInsightsPanelController extends GetxController {
     onTweak(instruction);
     if (textController.text.isNotEmpty) {
       textController.clear();
+    }
+
+    final class _AiInsightsPanelState extends GetxState {
+      @override
+      void onClose() {}
     }
   }
 

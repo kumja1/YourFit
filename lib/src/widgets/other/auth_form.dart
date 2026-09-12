@@ -1,7 +1,6 @@
-import 'package:animated_snack_bar/animated_snack_bar.dart';
-import 'package:flutter/material.dart';
+import 'package:extensions_plus/extensions_plus.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthResponse;
 import 'package:text_divider/text_divider.dart';
 import 'package:yourfit/src/models/auth/auth_response.dart';
@@ -9,6 +8,8 @@ import 'package:yourfit/src/services/auth_service.dart';
 import 'package:yourfit/src/utils/index.dart';
 import 'package:yourfit/src/widgets/buttons/animated_button.dart';
 import 'package:yourfit/src/widgets/buttons/async_animated_button.dart';
+import 'package:zenify/controllers/zen_controller.dart';
+import 'package:zenify/di/zen_di.dart';
 
 class AuthForm extends StatelessWidget {
   final List<Widget>? oauthButtons;
@@ -126,12 +127,12 @@ class AuthForm extends StatelessWidget {
   }
 }
 
-class AuthFormController extends GetxController {
+class AuthFormController extends ZenController {
   final GlobalKey<FormBuilderState> formKey = GlobalKey();
-  final AuthService authService = Get.find();
+  final AuthService authService = Zen.find<AuthService>();
 
-  String email = '';
-  String password = '';
+  Rx<String> email = ''.obs();
+  Rx<String> password = ''.obs();
 
   Future<AuthResponse> signInWithOAuth(OAuthProvider provider) async {
     AuthResponse response = await authService.signInWithOAuth(provider);
@@ -142,7 +143,6 @@ class AuthFormController extends GetxController {
 
   bool validateForm() {
     if (formKey.currentState == null) {
-      showSnackbar("An unexpected error occurred", AnimatedSnackBarType.error);
       return false;
     }
 
